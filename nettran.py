@@ -9,7 +9,7 @@ upload_destination      = ''
 port                    = ''
 
 def run_command(command):
-    pdb.set_trace()
+    #pdb.set_trace()
     command = command.rstrip()
     # 运行命令返回结果
     try:
@@ -23,7 +23,7 @@ def client_handler(client_socket):
     global upload
     global execute
     global command
-    ##pdb.set_trace()
+    ###pdb.set_trace()
     # 检测上传文件
     if len(upload_destination):
         # 读取多有字符并写下目标
@@ -34,16 +34,16 @@ def client_handler(client_socket):
             if not data:
                 break
             else:
-                fille_buffer += data
+                fille_buffer += data.decode('utf-8')
         # 将接受数据写入指定文件
         try:
             file_writer = open(upload_destination, 'wb')
             file_writer.write(fille_buffer)
             file_writer.close()
             #确认文件已经写出来
-            client_socket.send("Successfully saved file to %s \r\n" % upload_destination)
+            client_socket.send(("Successfully saved file to %s \r\n" % upload_destination).encode('utf-8'))
         except:
-            client_socket.send("Faild to saved file to %s \r\n" % upload_destination)
+            client_socket.send(("Faild to saved file to %s \r\n" % upload_destination).encode('utf-8'))
     # 检查命令行执行
     if len(execute):
         out_put = run_command(excute)
@@ -51,19 +51,21 @@ def client_handler(client_socket):
 
     # 如果需要一个命令行shell，那么我们进入另一个循环
     if command:
-        pdb.set_trace()
+        #
         while True:
             # 跳出一个窗口
-            client_socket.send("<BHP:#> ")
+            #pdb.set_trace()
+            client_socket.send("<BHP:#> ".encode('utf-8'))
             # 接收数据知道发现换行符
             cmd_buffer = ''
             #pdb.set_trace()
             while '\n' not in cmd_buffer:
-                cmd_buffer += str(client_socket.recv(1024))
+                cmd_buffer += client_socket.recv(1024).decode('utf-8')
             # 返还命令行执行输出
             response = run_command(cmd_buffer)
             # 返还相应数据
-            client_socket.send(response)
+            client_socket.send(response.decode('utf-8').encode('utf-8'))
+
 
 # 创建服务器端的主循环和子函数，用来对命令行shell的创建和命令进行处理
 def server_loop():
@@ -78,14 +80,14 @@ def server_loop():
 
     while True:
         client_socket, addr = server.accept()
-        #pdb.set_trace()
+        ##pdb.set_trace()
         # 分拆一个县城处理新的客户端
         client_thread = threading.Thread(target=client_handler, args=(client_socket, ))
         client_thread.start()
 
 # 实现client_sender函数
 def client_sender(buffer):
-    #pdb.set_trace()
+    ##pdb.set_trace()
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client.connect((target, port))
@@ -98,16 +100,18 @@ def client_sender(buffer):
             recv_len = 1
             response = ''
             while recv_len:
+                #pdb.set_trace()
                 data = client.recv(4096)
                 recv_len = len(data)
-                response += data
-
+                response += data.decode('utf-8')
                 if recv_len < 4096:
                     break
-                print(response)
-                buffer = input('')
-                buffer += '\n'
-                client.send(buffer)
+            print(response)
+            # data = client.recv(4096)
+            # print(data)
+            buffer = input('')
+            buffer += '\n'
+            client.send(buffer.encode('utf-8'))
     except:
         print('[*] Exception! Exiting.')
         client.close()
@@ -167,9 +171,9 @@ def main():
             assert False, 'Unhandled Option'
     # 从标准读入并发送数据
     if not listen and len(target) and port > 0:
-        #pdb.set_trace()
+        ##pdb.set_trace()
         buffer = input('command:')#sys.stdin.read()
-        client_sender(buffer)
+        client_sender(buffer.encode('utf-8'))
     # 监听
     # 如果listen为True，建立一个监听套接字，准备处理下一步命令（上传文件，执行命令，开启一个新的命令行shell）
     if listen:
